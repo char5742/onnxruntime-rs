@@ -360,6 +360,30 @@ mod directml {
 #[cfg(feature = "directml")]
 pub use self::directml::*;
 
+#[cfg(target_os = "android")]
+mod nnapi {
+    use super::*;
+
+    impl<'a> SessionBuilder<'a> {
+        pub fn with_append_execution_provider_nnapi(
+            self,
+            nnapi_flags: u32,
+        ) -> Result<SessionBuilder<'a>> {
+            let status = unsafe {
+                sys::OrtSessionOptionsAppendExecutionProvider_Nnapi(
+                    self.session_options_ptr,
+                    nnapi_flags as ::std::os::raw::c_uint,
+                )
+            };
+            status_to_result(status).map_err(OrtError::SessionOptions)?;
+            Ok(self)
+        }
+    }
+}
+
+#[cfg(target_os = "android")]
+pub use self::nnapi::*;
+
 /// Type storing the session information, built from an [`Environment`](environment/struct.Environment.html)
 #[derive(Debug)]
 pub struct Session<'a> {

@@ -193,7 +193,10 @@ fn generate_bindings(include_dir: &Path) {
     ];
 
     #[cfg(not(feature = "directml"))]
-    let header_name = "wrapper.h";
+    let header_name = match TRIPLET.os {
+        Os::Android => "wrapper_nnapi.h",
+        _ => "wrapper.h",
+    };
     #[cfg(feature = "directml")]
     let header_name = "wrapper_directml.h";
 
