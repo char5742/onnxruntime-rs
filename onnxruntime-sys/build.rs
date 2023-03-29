@@ -18,6 +18,10 @@ const ORT_VERSION: &str = "1.13.1";
 /// Base Url from which to download pre-built releases/
 const ORT_RELEASE_BASE_URL: &str = "https://github.com/microsoft/onnxruntime/releases/download";
 
+/// Base Url from which to download pre-built releases for android/
+const ORT_MAVEN_RELEASE_BASE_URL: &str =
+    "https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android";
+
 /// Environment variable selecting which strategy to use for finding the library
 /// Possibilities:
 /// * "download": Download a pre-built library from upstream. This is the default if `ORT_STRATEGY` is not set.
@@ -63,13 +67,14 @@ fn main() {
 fn main() {
     let libort_install_dir = prepare_libort_dir();
 
+    // FIXME: directmlとandroidで処理の表現が違うので統一する
     #[cfg(not(feature = "directml"))]
     let (include_dir, lib_dir) = match TRIPLET.os {
         Os::Android => {
             let include_dir = libort_install_dir.join("headers");
             let runtimes_dir = libort_install_dir
                 .join("jni")
-                .join(TRIPLET.arch.as_onnx_android_str().to_string());
+                .join(&*TRIPLET.arch.as_onnx_android_str());
             (include_dir, runtimes_dir)
         }
         _ => (
@@ -462,6 +467,7 @@ impl OnnxPrebuiltArchive for Triplet {
             }
             (Os::Windows, Architecture::X86, Accelerator::None)
             | (Os::MacOs, Architecture::X86_64, Accelerator::None)
+            | (Os::Android, Architecture::Arm64, Accelerator::None)
             | (Os::Linux, Architecture::Arm64, Accelerator::None) => Cow::from(format!(
                 "{}-{}",
                 self.os.as_onnx_str(),
@@ -486,7 +492,6 @@ impl OnnxPrebuiltArchive for Triplet {
                 "x64",
                 self.accelerator.as_onnx_str(),
             )),
-            (Os::Android, Architecture::Arm64, Accelerator::None) => Cow::from(""),
             _ => {
                 panic!(
                     "Unsupported prebuilt triplet: {:?}, {:?}, {:?}. Please use {}=system and {}=/path/to/onnxruntime",
@@ -511,9 +516,10 @@ fn prebuilt_archive_url() -> (PathBuf, String) {
         ORT_VERSION,
         TRIPLET.os.archive_extension()
     );
-    let prebuilt_url= match TRIPLET.os {
-        Os::Android =>format!(
-            "https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/{}/onnxruntime-android-{}.{}",
+    let prebuilt_url = match TRIPLET.os {
+        Os::Android => format!(
+            "{}/{}/onnxruntime-android-{}.{}",
+            ORT_MAVEN_RELEASE_BASE_URL,
             ORT_VERSION,
             ORT_VERSION,
             TRIPLET.os.archive_extension()
