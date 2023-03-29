@@ -372,7 +372,7 @@ mod nnapi {
             let status = unsafe {
                 sys::OrtSessionOptionsAppendExecutionProvider_Nnapi(
                     self.session_options_ptr,
-                    nnapi_flags as ::std::os::raw::c_uint,
+                    nnapi_flags,
                 )
             };
             status_to_result(status).map_err(OrtError::SessionOptions)?;
